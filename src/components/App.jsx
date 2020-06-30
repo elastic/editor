@@ -232,6 +232,7 @@ export default class App extends React.Component {
         showTileBoundaries: false,
         showCollisionBoxes: false,
         showOverdrawInspector: false,
+        transformRequest: this.addEmsLicense,
       },
       openlayersDebugOptions: {
         debugToolbox: false,
@@ -467,6 +468,17 @@ export default class App extends React.Component {
   openStyle = (styleObj) => {
     styleObj = this.setDefaultValues(styleObj)
     this.onStyleChanged(styleObj)
+  }
+
+  addEmsLicense(url, resourceType) {
+    var licensedUrl = new URL(url);
+    var params = licensedUrl.searchParams;
+    params.set('license', tokens.elasticmapsservice || '');
+    params.set('my_app_name', 'ems-basemap-editor');
+    params.set('my_app_version', '1.0.0');
+    return {
+      url: licensedUrl.toString(),
+    };
   }
 
   fetchSources() {
