@@ -11,15 +11,16 @@
     "test-watch": "cross-env NODE_ENV=test wdio config/wdio.conf.js --watch",
     "start": "webpack-dev-server --progress --profile --colors --config config/webpack.config.js",
     "lint": "eslint --ext js --ext jsx src test",
-    "lint-styles": "stylelint \"src/styles/*.scss\""
+    "lint-styles": "stylelint \"src/styles/*.scss\"",
+    "deploy": "npm run build && gh-pages -d build --repo https://github.com/elastic/ems-basemap-editor"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/maputnik/editor"
+    "url": "https://github.com/elastic/ems-basemap-editor"
   },
   "author": "Lukas Martinelli",
   "license": "MIT",
-  "homepage": "https://github.com/maputnik/editor#readme",
+  "homepage": "https://github.com/elastic/ems-basemap-editor",
   "dependencies": {
     "@babel/runtime": "^7.8.3",
     "@mapbox/mapbox-gl-rtl-text": "^0.2.3",
@@ -125,6 +126,7 @@
     "eslint-plugin-react": "^7.16.0",
     "express": "^4.17.1",
     "file-loader": "^4.2.0",
+    "gh-pages": "^3.1.0",
     "html-webpack-plugin": "^3.2.0",
     "is-docker": "^2.0.0",
     "istanbul": "^0.4.5",
