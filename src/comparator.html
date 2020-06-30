@@ -18,11 +18,11 @@
     href="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.css"
   />
   <body>
-    <dialog class="w-50">
+    <dialog class="w-50 dn sans-serif">
       <form method="dialog">
         <input type="submit" value="x" class="fr ba br1" />
       </form>
-      <article class="br2 mv4 w-100 center">
+      <article class="br2 mv1 w-100 center">
         <div class="">
           <h2>Compare Elastic Maps Service basemap styles</h2>
           <p class="f4 lh-copy measure mt2 mid-gray">
@@ -73,9 +73,6 @@
     <script src="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js"></script>
     <script>
-      var dialog = document.querySelector('dialog');
-      dialogPolyfill.registerDialog(dialog);
-      dialog.showModal();
       // https://github.com/mapbox/mapbox-gl-sync-move
       function moveToMapPosition(master, clones) {
         var center = master.getCenter();
@@ -191,6 +188,11 @@
         var params = new URLSearchParams(window.location.search);
         if (params.has('style')) {
           style = params.get('style');
+        } else {
+          var dialog = document.querySelector('dialog');
+          dialog.classList.remove('dn');
+          dialogPolyfill.registerDialog(dialog);
+          dialog.showModal();
         }
       }
 
