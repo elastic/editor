@@ -65,6 +65,10 @@ module.exports = {
       {
         from: './src/manifest.json',
         to: 'manifest.json'
+      },
+      {
+        from: './src/comparator.html',
+        to: 'comparator.html'
       }
     ])
   ]
