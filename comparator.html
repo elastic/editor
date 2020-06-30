@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <title>Elastic Maps Service Style Compare</title>
+  <style>
+    h2 {
+      z-index: 9999;
+    }
+    .mapboxgl-ctrl-attrib {
+      display: none;
+    }
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/tachyons/css/tachyons.min.css" />
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css" />
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.css"
+  />
+  <body>
+    <dialog class="w-50 dn sans-serif">
+      <form method="dialog">
+        <input type="submit" value="x" class="fr ba br1" />
+      </form>
+      <article class="br2 mv1 w-100 center">
+        <div class="">
+          <h2>Compare Elastic Maps Service basemap styles</h2>
+          <p class="f4 lh-copy measure mt2 mid-gray">
+            The maps on the left represent the current production basemap styles at different zoom
+            levels. The maps on the right contain your latest local style changes in
+            <a href="/" target="_blank">EMS Basemap Editor</a>.
+          </p>
+          <p class="f4 lh-copy measure mt2 mid-gray">
+            <em>Note:</em> Your style is saved in your browser's
+            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API"
+              >localStorage</a
+            >. Use the Export button in
+            <a href="/" target="_blank">EMS Basemap Editor</a>
+            to create a JSON file that can be shared with others.
+          </p>
+        </div>
+      </article>
+    </dialog>
+    <article class="">
+      <div class="bg-near-white fl w-50 vh-100 br">
+        <h2 class="absolute top-0 left-1 pa1 sans-serif f4 bg-white o-60">
+          Production Styles:
+          <a class="link hover-dark-red" href="?style=osm-bright">bright</a>
+          <a class="link hover-dark-red" href="?style=osm-bright-desaturated">desaturated</a>
+          <a class="link hover-dark-red" href="?style=dark-matter">dark</a>
+        </h2>
+        <div id="world-prod" class="mainMap bb pa2 vh-50"></div>
+        <div class="flex flex-wrap">
+          <div id="london-prod" class="zoomMap w-50 br bb pa2 vh-25"></div>
+          <div id="dc-prod" class="zoomMap w-50 bb pa2 vh-25"></div>
+          <div id="berlin-prod" class="zoomMap w-50 br pa2 vh-25"></div>
+          <div id="sydney-prod" class="zoomMap w-50 pa2 vh-25"></div>
+        </div>
+      </div>
+      <div class="fl w-50 bg-light-gray vh-100">
+        <h2 class="absolute top-0 right-1 pa1 sans-serif f4 bg-white o-60">
+          Your Style
+        </h2>
+        <div id="world-user" class="mainMap bb pa2 vh-50"></div>
+        <div class="flex flex-wrap">
+          <div id="london-user" class="zoomMap w-50 br bb pa2 vh-25"></div>
+          <div id="dc-user" class="zoomMap w-50 bb pa2 vh-25"></div>
+          <div id="berlin-user" class="zoomMap w-50 br pa2 vh-25"></div>
+          <div id="sydney-user" class="zoomMap w-50 pa2 vh-25"></div>
+        </div>
+      </div>
+    </article>
+    <script src="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js"></script>
+    <script>
+      // https://github.com/mapbox/mapbox-gl-sync-move
+      function moveToMapPosition(master, clones) {
+        var center = master.getCenter();
+        var zoom = master.getZoom();
+        var bearing = master.getBearing();
+        var pitch = master.getPitch();
+
+        clones.forEach(function (clone) {
+          clone.jumpTo({
+            center: center,
+            zoom: zoom,
+            bearing: bearing,
+            pitch: pitch,
+          });
+        });
+      }
+      function syncMaps() {
+        var maps;
+        var argLen = arguments.length;
+        if (argLen === 1) {
+          maps = arguments[0];
+        } else {
+          maps = [];
+          for (var i = 0; i < argLen; i++) {
+            maps.push(arguments[i]);
+          }
+        }
+
+        // Create all the movement functions, because if they're created every time
+        // they wouldn't be the same and couldn't be removed.
+        var fns = [];
+        maps.forEach(function (map, index) {
+          fns[index] = sync.bind(
+            null,
+            map,
+            maps.filter(function (o, i) {
+              return i !== index;
+            })
+          );
+        });
+
+        function on() {
+          maps.forEach(function (map, index) {
+            map.on('move', fns[index]);
+          });
+        }
+
+        function off() {
+          maps.forEach(function (map, index) {
+            map.off('move', fns[index]);
+          });
+        }
+
+        // When one map moves, we turn off the movement listeners
+        // on all the maps, move it, then turn the listeners on again
+        function sync(master, clones) {
+          off();
+          moveToMapPosition(master, clones);
+          on();
+        }
+
+        on();
+        return function () {
+          off();
+          fns = [];
+        };
+      }
+
+      function addLicense(url, resourceType) {
+        var licensedUrl = new URL(url);
+        var params = licensedUrl.searchParams;
+        params.set('license', 'cff9c99a-f789-4e74-890e-a1b41b6cb437');
+        params.set('my_app_name', 'ems-basemap-editor');
+        params.set('my_app_version', '1.0.0');
+        return {
+          url: licensedUrl.toString(),
+        };
+      }
+
+      var atlas = {
+        world: {
+          id: 'world',
+          center: [0, 0],
+          zoom: 1,
+        },
+        london: {
+          id: 'london',
+          center: [-0.14, 51.53],
+          zoom: 6,
+        },
+        dc: {
+          id: 'dc',
+          center: [-77.033, 38.888],
+          zoom: 10,
+        },
+        berlin: {
+          id: 'berlin',
+          center: [13.392, 52.519],
+          zoom: 12,
+        },
+        sydney: {
+          id: 'sydney',
+          center: [-208.793, -33.87],
+          zoom: 14,
+        },
+      };
+
+      var userMaps = [];
+      let style = 'osm-bright';
+
+      if ('URLSearchParams' in window) {
+        // Browser supports URLSearchParams
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('style')) {
+          style = params.get('style');
+        } else {
+          var dialog = document.querySelector('dialog');
+          dialog.classList.remove('dn');
+          dialogPolyfill.registerDialog(dialog);
+          dialog.showModal();
+        }
+      }
+
+      Object.values(atlas).forEach(function (opts) {
+        var mapRow = ['prod', 'user'].map(function (id) {
+          var map = new mapboxgl.Map({
+            ...opts,
+            container: `${opts.id}-${id}`,
+            transformRequest: addLicense,
+            style: id === 'prod' ? `https://tiles.maps.elastic.co/styles/${style}/style.json` : '',
+          });
+          if (id === 'user') {
+            userMaps.push(map);
+          }
+          return map;
+        });
+        syncMaps(...mapRow); //sometimes you need a little es6 sugar 😇
+      });
+
+      function applyUserStyleFromStorage() {
+        // Try to read the local storage
+        if (localStorage && localStorage.getItem('maputnik:latest_style')) {
+          const latestStyle = localStorage.getItem('maputnik:latest_style');
+          const styleVar = localStorage.getItem(`maputnik:style:${latestStyle}`);
+          const styleJson = JSON.parse(styleVar);
+          for (const map of userMaps) {
+            map.setStyle(styleJson);
+          }
+        }
+      }
+
+      window.addEventListener('storage', function (e) {
+        if (e.key.startsWith('maputnik:')) {
+          applyUserStyleFromStorage();
+        }
+      });
+
+      applyUserStyleFromStorage();
+    </script>
+  </body>
+</html>
