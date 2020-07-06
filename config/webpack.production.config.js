@@ -7,7 +7,7 @@ var BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlug
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var artifacts = require("../test/artifacts");
 
-var OUTPATH = artifacts.pathSync("/build");
+var OUTPATH = artifacts.pathSync("build");
 
 module.exports = {
   entry: {
@@ -48,8 +48,12 @@ module.exports = {
       {
         from: './src/manifest.json',
         to: 'manifest.json'
-    }
-  ]),
+      },
+      {
+        from: './src/comparator.html',
+        to: 'comparator.html'
+      }
+    ]),
     new BundleAnalyzerPlugin({
       analyzerMode: 'static',
       defaultSizes: 'gzip',

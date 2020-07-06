@@ -10,7 +10,7 @@ function genPath(subPath) {
     buildPath = path.join("/tmp/artifacts", subPath);
   }
   else {
-    buildPath = path.join(__dirname, '..', 'build', subPath);
+    buildPath = path.join(__dirname, '..', subPath);
   }
 
   return buildPath;
