@@ -18,7 +18,7 @@
     href="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.css"
   />
   <body>
-    <dialog class="error w-25 dn sans-serif bg-washed-red">
+    <dialog class="error w-25 dn sans-serif bg-washed-red mid-gray">
       <form method="dialog">
         <input type="submit" value="x" class="fr ba br1" />
       </form>
@@ -38,7 +38,8 @@
           <p class="f4 lh-copy measure mt2 mid-gray">
             The maps on the left represent the current production basemap styles at different zoom
             levels. The maps on the right contain your latest local style changes in
-            <a href="/" target="_blank">EMS Basemap Editor</a>.
+            <a href="/" target="_blank">EMS Basemap Editor</a> or loaded from a
+            <a href="https://gist.github.com">gist</a>.
           </p>
           <p class="f4 lh-copy measure mt2 mid-gray">
             <em>Note:</em> Your style is saved in your browser's
@@ -254,19 +255,23 @@
 
       if ('URLSearchParams' in window) {
         var params = new URLSearchParams(window.location.search);
-        if (params.has('gist')){
+        if (! params.has('gist')){
+          applyUserStyleFromStorage();
+        } else {
           // Try to get style from the GIST
           const gist = params.get('gist');
           fetch('https://api.github.com/gists/' + gist)
           .then(response => {
-            if (response.status === 200){
-              return response.json()
-            } else {
+            if (response.status !== 200){
               throw `${response.statusText} (${response.status})`;
+            } else {
+              return response.json();
             }
           })
           .then(data => {
-            if ( 'style.json' in data.files){
+            if ( ! 'style.json' in data.files){
+              throw 'style.json file not found in gist';
+            } else {
               isGist=true;
 
               const styleJson = JSON.parse(data.files['style.json'].content);
@@ -288,8 +293,6 @@
                 const href = link.getAttribute('href');
                 link.setAttribute('href', href + '&gist=' + gist);
               }
-            } else {
-              throw 'style.json file not found in gist';
             };
           })
           .catch(error => {
@@ -297,8 +300,6 @@
             console.error(error);
             applyUserStyleFromStorage();
           });
-        } else {
-          applyUserStyleFromStorage();
         }
       }
     </script>
