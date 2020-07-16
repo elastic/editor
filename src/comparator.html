@@ -18,7 +18,17 @@
     href="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.css"
   />
   <body>
-    <dialog class="w-50 dn sans-serif">
+    <dialog class="error w-25 dn sans-serif bg-washed-red">
+      <form method="dialog">
+        <input type="submit" value="x" class="fr ba br1" />
+      </form>
+      <article class="br2 mv1 w-100 center">
+        <div class="">
+          <p class="tc"><strong >Error: </strong><span class="p-error"></span></p>
+        </div>
+      </article>
+    </dialog>
+    <dialog class="welcome w-50 measure dn sans-serif">
       <form method="dialog">
         <input type="submit" value="x" class="fr ba br1" />
       </form>
@@ -45,9 +55,9 @@
       <div class="bg-near-white fl w-50 vh-100 br">
         <h2 class="absolute top-0 left-1 pa1 sans-serif f4 bg-white o-60">
           Production Styles:
-          <a class="link hover-dark-red" href="?style=osm-bright">bright</a>
-          <a class="link hover-dark-red" href="?style=osm-bright-desaturated">desaturated</a>
-          <a class="link hover-dark-red" href="?style=dark-matter">dark</a>
+          <a class="style-link link hover-dark-red" href="?style=osm-bright">bright</a>
+          <a class="style-link link hover-dark-red" href="?style=osm-bright-desaturated">desaturated</a>
+          <a class="style-link link hover-dark-red" href="?style=dark-matter">dark</a>
         </h2>
         <div id="world-prod" class="mainMap bb pa2 vh-50"></div>
         <div class="flex flex-wrap">
@@ -58,8 +68,7 @@
         </div>
       </div>
       <div class="fl w-50 bg-light-gray vh-100">
-        <h2 class="absolute top-0 right-1 pa1 sans-serif f4 bg-white o-60">
-          Your Style
+        <h2 id="h2-your-style" class="absolute top-0 right-1 pa1 sans-serif f4 bg-white o-60">
         </h2>
         <div id="world-user" class="mainMap bb pa2 vh-50"></div>
         <div class="flex flex-wrap">
@@ -152,6 +161,7 @@
         };
       }
 
+      let isGist=false;
       var atlas = {
         world: {
           id: 'world',
@@ -189,7 +199,7 @@
         if (params.has('style')) {
           style = params.get('style');
         } else {
-          var dialog = document.querySelector('dialog');
+          var dialog = document.querySelector('.welcome');
           dialog.classList.remove('dn');
           dialogPolyfill.registerDialog(dialog);
           dialog.showModal();
@@ -214,7 +224,8 @@
 
       function applyUserStyleFromStorage() {
         // Try to read the local storage
-        if (localStorage && localStorage.getItem('maputnik:latest_style')) {
+        if (!isGist && localStorage && localStorage.getItem('maputnik:latest_style')) {
+          document.getElementById('h2-your-style').textContent = 'Style from Editor';
           const latestStyle = localStorage.getItem('maputnik:latest_style');
           const styleVar = localStorage.getItem(`maputnik:style:${latestStyle}`);
           const styleJson = JSON.parse(styleVar);
@@ -224,13 +235,72 @@
         }
       }
 
+      // Listen to changes in Local Storage
       window.addEventListener('storage', function (e) {
         if (e.key.startsWith('maputnik:')) {
           applyUserStyleFromStorage();
         }
       });
 
-      applyUserStyleFromStorage();
+      function showErrorModal(text){
+        var dialog = document.querySelector('.error');
+        var errorPar = document.querySelector('.p-error');
+        errorPar.textContent = text;
+        dialog.classList.remove('dn');
+        dialogPolyfill.registerDialog(dialog);
+        dialog.showModal();
+      }
+
+
+      if ('URLSearchParams' in window) {
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('gist')){
+          // Try to get style from the GIST
+          const gist = params.get('gist');
+          fetch('https://api.github.com/gists/' + gist)
+          .then(response => {
+            if (response.status === 200){
+              return response.json()
+            } else {
+              throw `${response.statusText} (${response.status})`;
+            }
+          })
+          .then(data => {
+            if ( 'style.json' in data.files){
+              isGist=true;
+
+              const styleJson = JSON.parse(data.files['style.json'].content);
+
+              for (const map of userMaps) {
+                map.setStyle(styleJson);
+              }
+
+              // Change right panel title
+              const title = document.getElementById('h2-your-style');
+              const owner = data.owner.login;
+              const gistUrl = `https://gist.github.com/${owner}/${gist}`;
+
+              title.innerHTML = `<a href="${gistUrl}">${data.description}</a>`;
+
+              // Add gist parameter to style links
+              const links = document.querySelectorAll('.style-link');
+              for (const link of links){
+                const href = link.getAttribute('href');
+                link.setAttribute('href', href + '&gist=' + gist);
+              }
+            } else {
+              throw 'style.json file not found in gist';
+            };
+          })
+          .catch(error => {
+            showErrorModal(error);
+            console.error(error);
+            applyUserStyleFromStorage();
+          });
+        } else {
+          applyUserStyleFromStorage();
+        }
+      }
     </script>
   </body>
 </html>
