@@ -285,7 +285,7 @@
               const owner = data.owner.login;
               const gistUrl = `https://gist.github.com/${owner}/${gist}`;
 
-              title.innerHTML = `<a href="${gistUrl}">${data.description}</a>`;
+              title.innerHTML = `<a class="link hover-dark-red" href="${gistUrl}">${data.description}</a>`;
 
               // Add gist parameter to style links
               const links = document.querySelectorAll('.style-link');
