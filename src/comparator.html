@@ -182,7 +182,7 @@
         };
       }
 
-      let skiLocalStorage = false;
+      let skipLocalStorage = false;
       var atlas = {
         world: {
           id: "world",
@@ -249,7 +249,7 @@
       function applyUserStyleFromStorage() {
         // Try to read the local storage
         if (
-          !skiLocalStorage &&
+          !skipLocalStorage &&
           localStorage &&
           localStorage.getItem("maputnik:latest_style")
         ) {
@@ -299,7 +299,7 @@
               if (!"style.json" in data.files) {
                 throw "style.json file not found in gist";
               } else {
-                skiLocalStorage = true;
+                skipLocalStorage = true;
 
                 const styleJson = JSON.parse(data.files["style.json"].content);
 
@@ -348,7 +348,7 @@
               }
             })
             .then((styleJson) => {
-              skiLocalStorage = true;
+              skipLocalStorage = true;
 
               for (const map of userMaps) {
                 map.setStyle(styleJson);
