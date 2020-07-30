@@ -8,6 +8,12 @@
     .mapboxgl-ctrl-attrib {
       display: none;
     }
+    #location {
+      z-index: 9999;
+      left: 50%;
+      width: 200px;
+      margin-left: -100px;
+    }
   </style>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link
@@ -36,6 +42,9 @@
         </div>
       </article>
     </dialog>
+    <div id="location" class="absolute top-0">
+      <p class="tc pa1 code f6 ba bg-near-white o-80"></p>
+    </div>
     <dialog class="welcome w-50 measure dn sans-serif">
       <form method="dialog">
         <input type="submit" value="x" class="fr ba br1" />
@@ -103,12 +112,22 @@
     <script src="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js"></script>
     <script>
+      function format(center, zoom) {
+        const z = zoom.toFixed(2);
+        const lat = center.lat.toFixed(2);
+        const lng = center.lng.toFixed(2);
+
+        document.querySelector("#location p").innerText = `${z}/${lat}/${lng}`;
+      }
+
       // https://github.com/mapbox/mapbox-gl-sync-move
       function moveToMapPosition(master, clones) {
         var center = master.getCenter();
         var zoom = master.getZoom();
         var bearing = master.getBearing();
         var pitch = master.getPitch();
+
+        format(center, zoom);
 
         clones.forEach(function (clone) {
           clone.jumpTo({
@@ -188,6 +207,7 @@
           id: "world",
           center: [0, 0],
           zoom: 1,
+          hash: true,
         },
         london: {
           id: "london",
@@ -263,6 +283,7 @@
           for (const map of userMaps) {
             map.setStyle(styleJson);
           }
+          userMaps[0].setCenter(userMaps[0].getCenter());
         }
       }
 
@@ -306,6 +327,7 @@
                 for (const map of userMaps) {
                   map.setStyle(styleJson);
                 }
+                userMaps[0].setCenter(userMaps[0].getCenter());
 
                 // Change right panel title
                 const title = document.getElementById("h2-your-style");
