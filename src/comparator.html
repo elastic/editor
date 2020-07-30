@@ -182,7 +182,7 @@
         };
       }
 
-      let isGist = false;
+      let skiLocalStorage = false;
       var atlas = {
         world: {
           id: "world",
@@ -249,7 +249,7 @@
       function applyUserStyleFromStorage() {
         // Try to read the local storage
         if (
-          !isGist &&
+          !skiLocalStorage &&
           localStorage &&
           localStorage.getItem("maputnik:latest_style")
         ) {
@@ -299,7 +299,7 @@
               if (!"style.json" in data.files) {
                 throw "style.json file not found in gist";
               } else {
-                isGist = true;
+                skiLocalStorage = true;
 
                 const styleJson = JSON.parse(data.files["style.json"].content);
 
@@ -327,7 +327,64 @@
               console.error(error);
               applyUserStyleFromStorage();
             });
-        } else {
+        } // Github commit
+        if (params.has("github")) {
+          const github = params.get("github");
+          const ref = params.get("ref") !== 0 ? params.get("ref") : "";
+          const url = `https://api.github.com/repos/${github}/contents/style.json${
+            ref ? "?ref=" + ref : ""
+          }`;
+
+          fetch(url, {
+            headers: {
+              Accept: "application/vnd.github.v3.raw",
+            },
+          })
+            .then((response) => {
+              if (response.status !== 200) {
+                throw `${response.statusText} (${response.status})`;
+              } else {
+                return response.json();
+              }
+            })
+            .then((styleJson) => {
+              skiLocalStorage = true;
+
+              for (const map of userMaps) {
+                map.setStyle(styleJson);
+              }
+
+              // Change right panel title
+              const title = document.getElementById("h2-your-style");
+              const url = `https://github.com/${github}/blob/${
+                ref ? ref : ""
+              }/style.json`;
+              const ellRef = ref.length > 10 ? ref.slice(0,7) + '...' : ref;
+
+              title.innerHTML = `<a class="link hover-dark-red" href="${url}">${github} ${
+                ref ? "(" + ellRef + ")" : ""
+              }</a>`;
+
+              // Add gist parameter to style links
+              const links = document.querySelectorAll(".style-link");
+              for (const link of links) {
+                const href = link.getAttribute("href");
+
+                const url = `${href}&github=${github}${
+                  ref ? "&ref=" + ref : ""
+                }`;
+
+                link.setAttribute("href", url);
+              }
+            })
+            .catch((error) => {
+              showErrorModal(error);
+              console.error(error);
+              applyUserStyleFromStorage();
+            });
+        }
+        // Without known params, apply from editor
+        else {
           applyUserStyleFromStorage();
         }
       }
