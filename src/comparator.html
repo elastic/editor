@@ -399,6 +399,7 @@
               for (const map of userMaps) {
                 map.setStyle(styleJson);
               }
+              userMaps[0].setCenter(userMaps[0].getCenter());
 
               // Change right panel title
               const title = document.getElementById("h2-your-style");
