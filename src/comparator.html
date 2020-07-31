@@ -374,14 +374,17 @@
         if (params.has("github")) {
           const github = params.get("github");
           const ref = params.get("ref") !== 0 ? params.get("ref") : "";
-          const url = new URL(`/repos/${github}/contents/style.json`, 'https://api.github.com');
+          const url = new URL(
+            `/repos/${github}/contents/style.json`,
+            "https://api.github.com"
+          );
           if (ref) url.search = `?ref=${ref}`;
 
           fetch(url, {
             headers: {
               Accept: "application/vnd.github.v3.raw",
             },
-            credentials: 'omit',
+            credentials: "omit",
           })
             .then((response) => {
               if (response.status !== 200) {
@@ -402,13 +405,22 @@
               const url = `https://github.com/${github}/blob/${
                 ref ? ref : ""
               }/style.json`;
-              const ellRef = ref.length > 10 ? ref.slice(0,7) + '...' : ref;
 
-              title.innerHTML = `<a class="link hover-dark-red" href="${url}">${github} ${
-                ref ? "(" + ellRef + ")" : ""
-              }</a>`;
+              const ellRef = (() => {
+                if (ref) return ref.length > 10 ? ref.slice(0, 7) + "..." : ref;
+                else return "";
+              })();
 
-              // Add gist parameter to style links
+              const link = document.createElement("a");
+              link.classList.add("link", "hover-dark-red");
+              link.href = url;
+              link.textContent = `${github} ${ref ? "(" + ellRef + ")" : ""}`;
+              link.rel = "noreferrer noopener";
+
+              title.innerHTML = "";
+              title.appendChild(link);
+
+              // Add github parameter to style links
               const links = document.querySelectorAll(".style-link");
               for (const link of links) {
                 const href = link.getAttribute("href");
