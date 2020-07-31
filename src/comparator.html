@@ -338,6 +338,7 @@
             headers: {
               Accept: "application/vnd.github.v3.raw",
             },
+            credentials: 'omit',
           })
             .then((response) => {
               if (response.status !== 200) {
