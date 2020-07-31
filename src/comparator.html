@@ -215,7 +215,7 @@
         };
       }
 
-      let isGist = false;
+      let skipLocalStorage = false;
       var atlas = {
         world: {
           id: "world",
@@ -290,7 +290,7 @@
       function applyUserStyleFromStorage() {
         // Try to read the local storage
         if (
-          !isGist &&
+          !skipLocalStorage &&
           localStorage &&
           localStorage.getItem("maputnik:latest_style")
         ) {
@@ -341,7 +341,7 @@
               if (!"style.json" in data.files) {
                 throw "style.json file not found in gist";
               } else {
-                isGist = true;
+                skipLocalStorage = true;
 
                 const styleJson = JSON.parse(data.files["style.json"].content);
 
@@ -357,7 +357,7 @@
 
                 title.innerHTML = `<a class="link hover-dark-red" href="${gistUrl}">${data.description}</a>`;
 
-                // Add gist parameter to style links
+                // Add github parameter to style links
                 const links = document.querySelectorAll(".style-link");
                 for (const link of links) {
                   const href = link.getAttribute("href");
@@ -370,7 +370,77 @@
               console.error(error);
               applyUserStyleFromStorage();
             });
-        } else {
+        } // Github commit
+        if (params.has("github")) {
+          const github = params.get("github");
+          const ref = params.get("ref") !== 0 ? params.get("ref") : "";
+          const url = new URL(
+            `/repos/${github}/contents/style.json`,
+            "https://api.github.com"
+          );
+          if (ref) url.search = `?ref=${ref}`;
+
+          fetch(url, {
+            headers: {
+              Accept: "application/vnd.github.v3.raw",
+            },
+            credentials: "omit",
+          })
+            .then((response) => {
+              if (response.status !== 200) {
+                throw `${response.statusText} (${response.status})`;
+              } else {
+                return response.json();
+              }
+            })
+            .then((styleJson) => {
+              skipLocalStorage = true;
+
+              for (const map of userMaps) {
+                map.setStyle(styleJson);
+              }
+              userMaps[0].setCenter(userMaps[0].getCenter());
+
+              // Change right panel title
+              const title = document.getElementById("h2-your-style");
+              const url = `https://github.com/${github}/blob/${
+                ref ? ref : ""
+              }/style.json`;
+
+              const ellRef = (() => {
+                if (ref) return ref.length > 10 ? ref.slice(0, 7) + "..." : ref;
+                else return "";
+              })();
+
+              const link = document.createElement("a");
+              link.classList.add("link", "hover-dark-red");
+              link.href = url;
+              link.textContent = `${github} ${ref ? "(" + ellRef + ")" : ""}`;
+              link.rel = "noreferrer noopener";
+
+              title.innerHTML = "";
+              title.appendChild(link);
+
+              // Add github parameter to style links
+              const links = document.querySelectorAll(".style-link");
+              for (const link of links) {
+                const href = link.getAttribute("href");
+
+                const url = `${href}&github=${github}${
+                  ref ? "&ref=" + ref : ""
+                }`;
+
+                link.setAttribute("href", url);
+              }
+            })
+            .catch((error) => {
+              showErrorModal(error);
+              console.error(error);
+              applyUserStyleFromStorage();
+            });
+        }
+        // Without known params, apply from editor
+        else {
           applyUserStyleFromStorage();
         }
       }
