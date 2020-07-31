@@ -2,11 +2,11 @@
 <html lang="en">
   <title>Elastic Maps Service Style Compare</title>
   <style>
-    h2 {
-      z-index: 9999;
-    }
     .mapboxgl-ctrl-attrib {
       display: none;
+    }
+    #location {
+      left: 50%;
     }
   </style>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -36,6 +36,9 @@
         </div>
       </article>
     </dialog>
+    <div id="location" class="z-9999 absolute t0 w5 nl6 mr-auto">
+      <p class="tc pa1 code f6 ba b--yellow bg-washed-yellow o-60 center"></p>
+    </div>
     <dialog class="welcome w-50 measure dn sans-serif">
       <form method="dialog">
         <input type="submit" value="x" class="fr ba br1" />
@@ -64,7 +67,7 @@
     </dialog>
     <article class="">
       <div class="bg-near-white fl w-50 vh-100 br">
-        <h2 class="absolute top-0 left-1 pa1 sans-serif f4 bg-white o-60">
+        <h2 class="z-9999 absolute top-0 left-1 pa1 sans-serif f5 bg-white o-60">
           Production Styles:
           <a class="style-link link hover-dark-red" href="?style=osm-bright"
             >bright</a
@@ -89,7 +92,7 @@
       <div class="fl w-50 bg-light-gray vh-100">
         <h2
           id="h2-your-style"
-          class="absolute top-0 right-1 pa1 sans-serif f4 bg-white o-60"
+          class="z-9999 absolute top-0 right-1 pa1 sans-serif f5 bg-white o-60"
         ></h2>
         <div id="world-user" class="mainMap bb pa2 vh-50"></div>
         <div class="flex flex-wrap">
@@ -103,12 +106,42 @@
     <script src="https://unpkg.com/dialog-polyfill@0.5.1/dist/dialog-polyfill.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js"></script>
     <script>
+      function format(center, zoom) {
+        const z = zoom.toFixed(2);
+        const lat = center.lat.toFixed(2);
+        const lng = center.lng.toFixed(2);
+
+        const locationP = document.querySelector("#location p");
+
+        locationP.innerText = `${z}/${lat}/${lng}`;
+
+        // replace
+        const classesP = locationP.classList;
+        for ( const c of locationBackgroundClasses){
+          if (classesP.contains(c)){
+            const newClass = locationBackgroundClasses[parseInt(z) % locationBackgroundClasses.length];
+
+            // Color
+            classesP.replace(c, newClass);
+
+            // Border color
+            const prevBorder = c.replace('bg-washed-','b--');
+            const newBorder = newClass.replace('bg-washed-','b--');
+            classesP.replace(prevBorder, newBorder);
+
+            break;
+          }
+        }
+      }
+
       // https://github.com/mapbox/mapbox-gl-sync-move
       function moveToMapPosition(master, clones) {
         var center = master.getCenter();
         var zoom = master.getZoom();
         var bearing = master.getBearing();
         var pitch = master.getPitch();
+
+        format(center, zoom);
 
         clones.forEach(function (clone) {
           clone.jumpTo({
@@ -188,6 +221,7 @@
           id: "world",
           center: [0, 0],
           zoom: 1,
+          hash: true,
         },
         london: {
           id: "london",
@@ -212,6 +246,13 @@
       };
 
       var userMaps = [];
+      const locationBackgroundClasses = [
+        'bg-washed-red',
+        'bg-washed-green',
+        'bg-washed-blue',
+        'bg-washed-yellow'
+      ];
+
       let style = "osm-bright";
 
       if ("URLSearchParams" in window) {
@@ -263,6 +304,7 @@
           for (const map of userMaps) {
             map.setStyle(styleJson);
           }
+          userMaps[0].setCenter(userMaps[0].getCenter());
         }
       }
 
@@ -306,6 +348,7 @@
                 for (const map of userMaps) {
                   map.setStyle(styleJson);
                 }
+                userMaps[0].setCenter(userMaps[0].getCenter());
 
                 // Change right panel title
                 const title = document.getElementById("h2-your-style");
